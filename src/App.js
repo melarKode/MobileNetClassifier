@@ -11,15 +11,17 @@ const stateMachine = {
     awaitingUpload: {on: {next:'ready'}},
     ready: {on: {next:'classifying'}, showImage: true},
     classifying: {on:{next:'complete'}},
-    complete: {on: {next:'awaitingUpload'}, showImage: true}
+    complete: {on: {next:'awaitingUpload'}, showImage: true, showResults: true}
   } 
 }
 
 const reducer = (currentState,event)=> stateMachine.states[currentState].on[event] || stateMachine.initial;
 
-const formatResult = ({className, probability})=>{
-  
-}
+const formatResult = ({className, probability})=>(
+  <li key={className}>
+    {`${className}: %${(probability*100).toFixed(2)}`}
+  </li>
+);
 
 function App() {
   tf.setBackend("cpu");
@@ -51,8 +53,14 @@ function App() {
 
   const identify = async ()=>{
     next();
-    const results = await model.classify(imageRef.current);
+    const classificationResults = await model.classify(imageRef.current);
+    setResults(classificationResults);
+    next();
+  }
 
+  const reset = ()=>{
+    setResults([]);
+    setImageURL(null);
     next();
   }
 
@@ -62,14 +70,17 @@ function App() {
     awaitingUpload: {text: 'Upload Photo',action: ()=>inputRef.current.click()},
     ready: {text: 'Identify', action:identify},
     classifying: {text: 'Identifying', action: ()=>{}},
-    complete: {text: 'Reset', action: ()=>{}},
+    complete: {text: 'Reset', action: reset},
   }
 
-  const {showImage} = stateMachine.states[state];
+  const {showImage=false, showResults=false} = stateMachine.states[state];
 
   return (
     <div className="App">
       {showImage && <img src={imageURL} alt="upload-preview" ref={imageRef}/>}
+      {showResults && <ul>
+        {results.map(formatResult)}
+      </ul>}
       <input type="file" accept="image/*" capture="camera" ref={inputRef} onChange={handleUpload}/>
       <button onClick={buttonProps[state].action}>{buttonProps[state].text}</button>
     </div>
