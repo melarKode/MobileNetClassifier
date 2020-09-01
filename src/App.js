@@ -35,7 +35,6 @@ function App() {
   const next = ()=> dispatch('next');
 
   const loadModel = async ()=>{
-    console.log('hi')
     next();
     const mobilenetModel = await mobilenet.load();
     setModel(mobilenetModel);
